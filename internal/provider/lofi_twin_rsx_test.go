@@ -20,7 +20,7 @@ func TestAccExampleResource(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccExampleResourceConfig("one"),
+				Config: testAccExampleResourceConfig("{}", "Terraform", "0000000000000000:0000000000000000:0000000000000000"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(
 						"tensor9_lofi_twin.test_twin",
@@ -34,8 +34,8 @@ func TestAccExampleResource(t *testing.T) {
 					),
 					statecheck.ExpectKnownValue(
 						"tensor9_lofi_twin.test_twin",
-						tfjsonpath.New("configurable_attribute"),
-						knownvalue.StringExact("one"),
+						tfjsonpath.New("template"),
+						knownvalue.StringExact("{}"),
 					),
 				},
 			},
@@ -48,11 +48,11 @@ func TestAccExampleResource(t *testing.T) {
 				// example code does not have an actual upstream service.
 				// Once the Read method is able to refresh information from
 				// the upstream service, this can be removed.
-				ImportStateVerifyIgnore: []string{"configurable_attribute", "defaulted"},
+				ImportStateVerifyIgnore: []string{"template", "template_fmt", "projection_id", "defaulted"},
 			},
 			// Update and Read testing
 			{
-				Config: testAccExampleResourceConfig("two"),
+				Config: testAccExampleResourceConfig("{}", "Terraform", "0000000000000000:0000000000000000:0000000000000000"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(
 						"tensor9_lofi_twin.test_twin",
@@ -66,8 +66,8 @@ func TestAccExampleResource(t *testing.T) {
 					),
 					statecheck.ExpectKnownValue(
 						"tensor9_lofi_twin.test_twin",
-						tfjsonpath.New("configurable_attribute"),
-						knownvalue.StringExact("two"),
+						tfjsonpath.New("template"),
+						knownvalue.StringExact("{}"),
 					),
 				},
 			},
@@ -76,10 +76,12 @@ func TestAccExampleResource(t *testing.T) {
 	})
 }
 
-func testAccExampleResourceConfig(configurableAttribute string) string {
+func testAccExampleResourceConfig(template string, templateFmt string, projectionId string) string {
 	return fmt.Sprintf(`
 resource "tensor9_lofi_twin" "test_twin" {
-  configurable_attribute = %[1]q
+  template = %[1]q
+  template_fmt = %[2]q
+  projection_id = %[3]q
 }
-`, configurableAttribute)
+`, template, templateFmt, projectionId)
 }

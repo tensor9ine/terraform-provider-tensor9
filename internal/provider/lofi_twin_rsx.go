@@ -33,9 +33,11 @@ type T9LoFiTwinRsx struct {
 
 // T9LoFiTwinRsxModel describes the resource data model.
 type T9LoFiTwinRsxModel struct {
-	ConfigurableAttribute types.String `tfsdk:"configurable_attribute"`
-	Defaulted             types.String `tfsdk:"defaulted"`
-	Id                    types.String `tfsdk:"id"`
+	Template     types.String `tfsdk:"template"`
+	TemplateFmt  types.String `tfsdk:"template_fmt"`
+	ProjectionId types.String `tfsdk:"projection_id"`
+	Defaulted    types.String `tfsdk:"defaulted"`
+	Id           types.String `tfsdk:"id"`
 }
 
 func (r *T9LoFiTwinRsx) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -48,9 +50,20 @@ func (r *T9LoFiTwinRsx) Schema(ctx context.Context, req resource.SchemaRequest, 
 		MarkdownDescription: "Tensor9 Lo-Fidelity Digital Twin",
 
 		Attributes: map[string]schema.Attribute{
-			"configurable_attribute": schema.StringAttribute{
-				MarkdownDescription: "Example configurable attribute",
-				Optional:            true,
+			"template": schema.StringAttribute{
+				MarkdownDescription: "The template that specifies the resource to create inside the appliance",
+				Optional:            false,
+				Required:            true,
+			},
+			"template_fmt": schema.StringAttribute{
+				MarkdownDescription: "The format of the template",
+				Optional:            false,
+				Required:            true,
+			},
+			"projection_id": schema.StringAttribute{
+				MarkdownDescription: "The id of the projection (and associated appliance) to create the resource in",
+				Optional:            false,
+				Required:            true,
 			},
 			"defaulted": schema.StringAttribute{
 				MarkdownDescription: "Example configurable attribute with default value",
