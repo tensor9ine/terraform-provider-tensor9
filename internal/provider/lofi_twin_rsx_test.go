@@ -23,17 +23,17 @@ func TestAccExampleResource(t *testing.T) {
 				Config: testAccExampleResourceConfig("one"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(
-						"scaffolding_example.test",
+						"tensor9_lofi_twin.test_twin",
 						tfjsonpath.New("id"),
 						knownvalue.StringExact("example-id"),
 					),
 					statecheck.ExpectKnownValue(
-						"scaffolding_example.test",
+						"tensor9_lofi_twin.test_twin",
 						tfjsonpath.New("defaulted"),
 						knownvalue.StringExact("example value when not configured"),
 					),
 					statecheck.ExpectKnownValue(
-						"scaffolding_example.test",
+						"tensor9_lofi_twin.test_twin",
 						tfjsonpath.New("configurable_attribute"),
 						knownvalue.StringExact("one"),
 					),
@@ -41,7 +41,7 @@ func TestAccExampleResource(t *testing.T) {
 			},
 			// ImportState testing
 			{
-				ResourceName:      "scaffolding_example.test",
+				ResourceName:      "tensor9_lofi_twin.test_twin",
 				ImportState:       true,
 				ImportStateVerify: true,
 				// This is not normally necessary, but is here because this
@@ -55,17 +55,17 @@ func TestAccExampleResource(t *testing.T) {
 				Config: testAccExampleResourceConfig("two"),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(
-						"scaffolding_example.test",
+						"tensor9_lofi_twin.test_twin",
 						tfjsonpath.New("id"),
 						knownvalue.StringExact("example-id"),
 					),
 					statecheck.ExpectKnownValue(
-						"scaffolding_example.test",
+						"tensor9_lofi_twin.test_twin",
 						tfjsonpath.New("defaulted"),
 						knownvalue.StringExact("example value when not configured"),
 					),
 					statecheck.ExpectKnownValue(
-						"scaffolding_example.test",
+						"tensor9_lofi_twin.test_twin",
 						tfjsonpath.New("configurable_attribute"),
 						knownvalue.StringExact("two"),
 					),
@@ -78,7 +78,7 @@ func TestAccExampleResource(t *testing.T) {
 
 func testAccExampleResourceConfig(configurableAttribute string) string {
 	return fmt.Sprintf(`
-resource "scaffolding_example" "test" {
+resource "tensor9_lofi_twin" "test_twin" {
   configurable_attribute = %[1]q
 }
 `, configurableAttribute)
