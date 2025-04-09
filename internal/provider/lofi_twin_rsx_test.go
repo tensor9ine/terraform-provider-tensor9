@@ -5,6 +5,7 @@ package provider
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -20,8 +21,25 @@ func TestAccExampleResource(t *testing.T) {
 	reactor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" && r.URL.Path == "/stack/tf/react" {
 			w.Header().Set("Content-Type", "application/json")
-			// Respond with a dummy infra_id
-			fmt.Fprint(w, `{"infra_id": "0000000000000000000000000000beef"}`)
+
+			bodyBytes, err := io.ReadAll(r.Body)
+			if err != nil {
+				http.Error(w, "failed to read body", http.StatusBadRequest)
+				return
+			}
+			defer func(Body io.ReadCloser) {
+				err := Body.Close()
+				if err != nil {
+					println(fmt.Sprintf("Error closing request body: %v\n", err))
+				}
+			}(r.Body)
+			println(fmt.Sprintf("Reactor received request:\n%s\n", string(bodyBytes)))
+			_, err = fmt.Fprint(w, `{"InfraId": "000000000000000000000000deadbeef", "ComputedProperties": { "prop1": "value1", "prop2": "value2" }}`)
+			if err != nil {
+				http.Error(w, "failed to write response", http.StatusInternalServerError)
+				return
+			}
+
 			return
 		}
 
@@ -53,7 +71,7 @@ func TestAccExampleResource(t *testing.T) {
 				// example code does not have an actual upstream service.
 				// Once the Read method is able to refresh information from
 				// the upstream service, this can be removed.
-				ImportStateVerifyIgnore: []string{"template", "template_fmt", "projection_id", "rsx_id", "infra_id", "properties"}, // TODO: remove this once ::Read is implemented
+				ImportStateVerifyIgnore: []string{"template", "template_fmt", "projection_id", "rsx_id", "infra_id", "properties", "computed_properties"}, // TODO: remove this once ::Read is implemented
 			},
 			// Update and Read testing
 			{

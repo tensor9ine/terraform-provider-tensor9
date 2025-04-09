@@ -37,13 +37,14 @@ type T9LoFiTwinRsx struct {
 
 // T9LoFiTwinRsxModel describes the resource data model.
 type T9LoFiTwinRsxModel struct {
-	Template     types.String `tfsdk:"template"`
-	TemplateFmt  types.String `tfsdk:"template_fmt"`
-	ProjectionId types.String `tfsdk:"projection_id"`
-	Properties   types.Map    `tfsdk:"properties"`
-	RsxId        types.String `tfsdk:"rsx_id"`
-	InfraId      types.String `tfsdk:"infra_id"`
-	Id           types.String `tfsdk:"id"`
+	Template           types.String `tfsdk:"template"`
+	TemplateFmt        types.String `tfsdk:"template_fmt"`
+	ProjectionId       types.String `tfsdk:"projection_id"`
+	Properties         types.Map    `tfsdk:"properties"`
+	ComputedProperties types.Map    `tfsdk:"computed_properties"`
+	RsxId              types.String `tfsdk:"rsx_id"`
+	InfraId            types.String `tfsdk:"infra_id"`
+	Id                 types.String `tfsdk:"id"`
 }
 
 func (r *T9LoFiTwinRsx) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -74,7 +75,15 @@ func (r *T9LoFiTwinRsx) Schema(ctx context.Context, req resource.SchemaRequest, 
 			"properties": schema.MapAttribute{
 				ElementType:         types.StringType,
 				Required:            true,
-				MarkdownDescription: "A map of properties to configure the resource",
+				MarkdownDescription: "A map of properties with which to configure the resource",
+				PlanModifiers: []planmodifier.Map{
+					mapplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"computed_properties": schema.MapAttribute{
+				ElementType:         types.StringType,
+				Computed:            true,
+				MarkdownDescription: "A map of properties computed after resource create/update",
 				PlanModifiers: []planmodifier.Map{
 					mapplanmodifier.UseStateForUnknown(),
 				},
@@ -182,11 +191,13 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 
 	err = evtResultResp.Body.Close()
 	if err != nil {
+		resp.Diagnostics.AddError("Close Response Body Error", err.Error())
 		return
 	}
 
 	var evtResult struct {
-		InfraId string `json:"infra_id"`
+		InfraId            string            `json:"InfraId"`
+		ComputedProperties map[string]string `json:"ComputedProperties"`
 	}
 
 	err = json.Unmarshal(evtResultBytes, &evtResult)
@@ -201,8 +212,12 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 	rsxModel.InfraId = types.StringValue(evtResult.InfraId)
 	rsxModel.Id = rsxModel.InfraId
 
-	tflog.Debug(ctx, fmt.Sprintf("created an lo fi twin resource; infraId=%s", rsxModel.InfraId.ValueString()))
-	println(fmt.Sprintf("created lo fi twin resource; infraId=%s; rsxId=%s; properties=%s", rsxModel.InfraId.ValueString(), rsxModel.RsxId.ValueString(), rsxModel.Properties.String()))
+	computedProperties, diag := types.MapValueFrom(ctx, types.StringType, evtResult.ComputedProperties)
+	resp.Diagnostics.Append(diag...)
+	rsxModel.ComputedProperties = computedProperties
+
+	tflog.Debug(ctx, fmt.Sprintf("created an lo fi twin resource; infra_id=%s", rsxModel.InfraId.ValueString()))
+	println(fmt.Sprintf("created lo fi twin resource; infra_id=%s; rsx_id=%s; computed_properties=%s", rsxModel.InfraId.ValueString(), rsxModel.RsxId.ValueString(), rsxModel.ComputedProperties.String()))
 
 	// Save rsxModel into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &rsxModel)...)
