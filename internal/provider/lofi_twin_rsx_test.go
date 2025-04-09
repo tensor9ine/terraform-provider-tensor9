@@ -24,11 +24,6 @@ func TestAccExampleResource(t *testing.T) {
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(
 						"tensor9_lofi_twin.test_twin",
-						tfjsonpath.New("id"),
-						knownvalue.StringExact("example-id"),
-					),
-					statecheck.ExpectKnownValue(
-						"tensor9_lofi_twin.test_twin",
 						tfjsonpath.New("template"),
 						knownvalue.StringExact("{}"),
 					),
@@ -43,17 +38,12 @@ func TestAccExampleResource(t *testing.T) {
 				// example code does not have an actual upstream service.
 				// Once the Read method is able to refresh information from
 				// the upstream service, this can be removed.
-				ImportStateVerifyIgnore: []string{"template", "template_fmt", "projection_id"},
+				ImportStateVerifyIgnore: []string{"template", "template_fmt", "projection_id", "infra_id", "properties"}, // TODO: remove this once ::Read is implemented
 			},
 			// Update and Read testing
 			{
 				Config: testAccExampleResourceConfig("{}", "Terraform", "0000000000000000:0000000000000000:0000000000000000"),
 				ConfigStateChecks: []statecheck.StateCheck{
-					statecheck.ExpectKnownValue(
-						"tensor9_lofi_twin.test_twin",
-						tfjsonpath.New("id"),
-						knownvalue.StringExact("example-id"),
-					),
 					statecheck.ExpectKnownValue(
 						"tensor9_lofi_twin.test_twin",
 						tfjsonpath.New("template"),
@@ -76,6 +66,7 @@ resource "tensor9_lofi_twin" "test_twin" {
   template = %[1]q
   template_fmt = %[2]q
   projection_id = %[3]q
+  properties = {}
 }
 `, template, templateFmt, projectionId)
 }

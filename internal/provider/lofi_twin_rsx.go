@@ -6,6 +6,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -36,6 +37,8 @@ type T9LoFiTwinRsxModel struct {
 	Template     types.String `tfsdk:"template"`
 	TemplateFmt  types.String `tfsdk:"template_fmt"`
 	ProjectionId types.String `tfsdk:"projection_id"`
+	InfraId      types.String `tfsdk:"infra_id"`
+	Properties   types.Map    `tfsdk:"properties"`
 	Id           types.String `tfsdk:"id"`
 }
 
@@ -64,9 +67,24 @@ func (r *T9LoFiTwinRsx) Schema(ctx context.Context, req resource.SchemaRequest, 
 				Optional:            false,
 				Required:            true,
 			},
+			"infra_id": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "The id of the infra that tracks the lifecycle and configuration of the resource",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"properties": schema.MapAttribute{
+				ElementType:         types.StringType,
+				Required:            true,
+				MarkdownDescription: "A map of properties to configure the resource",
+				PlanModifiers: []planmodifier.Map{
+					mapplanmodifier.UseStateForUnknown(),
+				},
+			},
 			"id": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "Example identifier",
+				MarkdownDescription: "Unique identifier for this resource - always set to the infra_id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -122,7 +140,8 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 
 	// For the purposes of this example code, hardcoding a response value to
 	// save into the Terraform state.
-	data.Id = types.StringValue("example-id")
+	data.InfraId = types.StringValue("00000000000000000000000000000001") // TODO: actual infra id
+	data.Id = data.InfraId
 
 	// Write logs using the tflog package
 	// Documentation: https://terraform.io/plugin/log
