@@ -12,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -36,7 +35,6 @@ type T9LoFiTwinRsxModel struct {
 	Template     types.String `tfsdk:"template"`
 	TemplateFmt  types.String `tfsdk:"template_fmt"`
 	ProjectionId types.String `tfsdk:"projection_id"`
-	Defaulted    types.String `tfsdk:"defaulted"`
 	Id           types.String `tfsdk:"id"`
 }
 
@@ -51,7 +49,7 @@ func (r *T9LoFiTwinRsx) Schema(ctx context.Context, req resource.SchemaRequest, 
 
 		Attributes: map[string]schema.Attribute{
 			"template": schema.StringAttribute{
-				MarkdownDescription: "The template that specifies the resource to create inside the appliance",
+				MarkdownDescription: "The infra template that specifies the resource to create inside the appliance",
 				Optional:            false,
 				Required:            true,
 			},
@@ -64,12 +62,6 @@ func (r *T9LoFiTwinRsx) Schema(ctx context.Context, req resource.SchemaRequest, 
 				MarkdownDescription: "The id of the projection (and associated appliance) to create the resource in",
 				Optional:            false,
 				Required:            true,
-			},
-			"defaulted": schema.StringAttribute{
-				MarkdownDescription: "Example configurable attribute with default value",
-				Optional:            true,
-				Computed:            true,
-				Default:             stringdefault.StaticString("example value when not configured"),
 			},
 			"id": schema.StringAttribute{
 				Computed:            true,
