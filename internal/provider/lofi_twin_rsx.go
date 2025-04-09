@@ -4,9 +4,12 @@
 package provider
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
+	"io"
 	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -37,8 +40,9 @@ type T9LoFiTwinRsxModel struct {
 	Template     types.String `tfsdk:"template"`
 	TemplateFmt  types.String `tfsdk:"template_fmt"`
 	ProjectionId types.String `tfsdk:"projection_id"`
-	InfraId      types.String `tfsdk:"infra_id"`
 	Properties   types.Map    `tfsdk:"properties"`
+	RsxId        types.String `tfsdk:"rsx_id"`
+	InfraId      types.String `tfsdk:"infra_id"`
 	Id           types.String `tfsdk:"id"`
 }
 
@@ -67,19 +71,27 @@ func (r *T9LoFiTwinRsx) Schema(ctx context.Context, req resource.SchemaRequest, 
 				Optional:            false,
 				Required:            true,
 			},
-			"infra_id": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "The id of the infra that tracks the lifecycle and configuration of the resource",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
 			"properties": schema.MapAttribute{
 				ElementType:         types.StringType,
 				Required:            true,
 				MarkdownDescription: "A map of properties to configure the resource",
 				PlanModifiers: []planmodifier.Map{
 					mapplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"rsx_id": schema.StringAttribute{
+				Optional:            false,
+				Required:            true,
+				MarkdownDescription: "The rsx id of the twin rsx in the compiled twin stack",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"infra_id": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "The id of the infra that tracks the lifecycle and configuration of the resource",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"id": schema.StringAttribute{
@@ -115,10 +127,10 @@ func (r *T9LoFiTwinRsx) Configure(ctx context.Context, req resource.ConfigureReq
 }
 
 func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data T9LoFiTwinRsxModel
+	var rsxModel T9LoFiTwinRsxModel
 
-	// Read Terraform plan data into the model
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	// Read Terraform plan rsxModel into the model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &rsxModel)...)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -130,25 +142,70 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 	tflog.Debug(ctx, fmt.Sprintf("Found provider endpoint: %s", r.provider.Endpoint))
 	tflog.Debug(ctx, fmt.Sprintf("Found provider api_key: %s", r.provider.ApiKey))
 
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// httpResp, err := r.client.Do(httpReq)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create example, got error: %s", err))
-	//     return
-	// }
+	evt := map[string]interface{}{
+		"apiKey":  r.provider.ApiKey,
+		"rsxType": "LoFiTwin",
+		"evtType": "Create",
+		"rsx": map[string]interface{}{
+			"type": "LoFiTwin",
+			"template": map[string]interface{}{
+				"raw": rsxModel.Template.ValueString(),
+				"fmt": rsxModel.TemplateFmt.ValueString(),
+			},
+			"projectionId": rsxModel.ProjectionId.ValueString(),
+			"properties":   mapToStringMap(rsxModel.Properties),
+		},
+	}
 
-	// For the purposes of this example code, hardcoding a response value to
-	// save into the Terraform state.
-	data.InfraId = types.StringValue("00000000000000000000000000000001") // TODO: actual infra id
-	data.Id = data.InfraId
+	evtJson, err := json.Marshal(evt)
+	if err != nil {
+		resp.Diagnostics.AddError("JSON Encoding Error", fmt.Sprintf("Failed to encode request body: %s", err))
+		return
+	}
 
-	// Write logs using the tflog package
-	// Documentation: https://terraform.io/plugin/log
-	tflog.Trace(ctx, "created a resource")
+	evtReq, err := http.NewRequest("POST", r.provider.Endpoint.ValueString()+"/stack/tf/react", bytes.NewReader(evtJson))
+	evtResultResp, err := r.client.Do(evtReq)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create rsx, got error: %s", err))
+		return
+	}
 
-	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	evtResultBytes, err := io.ReadAll(evtResultResp.Body)
+
+	if err != nil {
+		resp.Diagnostics.AddError("Read Response Error", err.Error())
+		return
+	}
+
+	evtResultStr := string(evtResultBytes)
+	tflog.Debug(ctx, fmt.Sprintf("Create response body: %s", evtResultStr))
+
+	err = evtResultResp.Body.Close()
+	if err != nil {
+		return
+	}
+
+	var evtResult struct {
+		InfraId string `json:"infra_id"`
+	}
+
+	err = json.Unmarshal(evtResultBytes, &evtResult)
+	if err != nil {
+		resp.Diagnostics.AddError("JSON decode error", fmt.Sprintf("Failed to decode response JSON: %s", err))
+		return
+	}
+
+	tflog.Debug(ctx, fmt.Sprintf("Got tf evt result: %s", evtResultStr))
+	println(fmt.Sprintf("Got tf evt result for tf stack reactor: %s", evtResultStr))
+
+	rsxModel.InfraId = types.StringValue(evtResult.InfraId)
+	rsxModel.Id = rsxModel.InfraId
+
+	tflog.Debug(ctx, fmt.Sprintf("created an lo fi twin resource; infraId=%s", rsxModel.InfraId.ValueString()))
+	println(fmt.Sprintf("created lo fi twin resource; infraId=%s; rsxId=%s; properties=%s", rsxModel.InfraId.ValueString(), rsxModel.RsxId.ValueString(), rsxModel.Properties.String()))
+
+	// Save rsxModel into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &rsxModel)...)
 }
 
 func (r *T9LoFiTwinRsx) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -216,4 +273,14 @@ func (r *T9LoFiTwinRsx) Delete(ctx context.Context, req resource.DeleteRequest, 
 
 func (r *T9LoFiTwinRsx) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+func mapToStringMap(attrMap types.Map) map[string]string {
+	result := make(map[string]string)
+	for k, v := range attrMap.Elements() {
+		if strVal, ok := v.(types.String); ok {
+			result[k] = strVal.ValueString()
+		}
+	}
+	return result
 }
