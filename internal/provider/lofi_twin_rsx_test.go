@@ -68,6 +68,10 @@ func TestAccExampleResource(t *testing.T) {
 
 func testAccExampleResourceConfig(template string, templateFmt string, projectionId string) string {
 	return fmt.Sprintf(`
+provider "tensor9" {
+  endpoint = "http://localhost:9000"
+  api_key  = "deadbeef"
+}
 resource "tensor9_lofi_twin" "test_twin" {
   template = %[1]q
   template_fmt = %[2]q

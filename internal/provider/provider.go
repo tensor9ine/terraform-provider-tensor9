@@ -32,6 +32,12 @@ type Tensor9Provider struct {
 // Tensor9ProviderModel describes the provider data model.
 type Tensor9ProviderModel struct {
 	Endpoint types.String `tfsdk:"endpoint"`
+	ApiKey   types.String `tfsdk:"api_key"`
+}
+
+type Tensor9ProviderData struct {
+	Client *http.Client
+	Model  *Tensor9ProviderModel
 }
 
 func (p *Tensor9Provider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -43,8 +49,14 @@ func (p *Tensor9Provider) Schema(ctx context.Context, req provider.SchemaRequest
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"endpoint": schema.StringAttribute{
-				MarkdownDescription: "Example provider attribute",
-				Optional:            true,
+				MarkdownDescription: "The endpoint of the vctrl's terraform stack reactor to send CRUD requests to",
+				Optional:            false,
+				Required:            true,
+			},
+			"api_key": schema.StringAttribute{
+				MarkdownDescription: "The api key used to authenticate with the vctrl's terraform stack reactor",
+				Optional:            false,
+				Required:            true,
 			},
 		},
 	}
@@ -65,7 +77,10 @@ func (p *Tensor9Provider) Configure(ctx context.Context, req provider.ConfigureR
 	// Example client configuration for data sources and resources
 	client := http.DefaultClient
 	resp.DataSourceData = client
-	resp.ResourceData = client
+	resp.ResourceData = &Tensor9ProviderData{
+		Client: client,
+		Model:  &data,
+	}
 }
 
 func (p *Tensor9Provider) Resources(ctx context.Context) []func() resource.Resource {

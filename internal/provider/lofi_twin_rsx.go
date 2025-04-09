@@ -27,7 +27,8 @@ func NewT9LoFiTwinRsx() resource.Resource {
 
 // T9LoFiTwinRsx defines the resource implementation.
 type T9LoFiTwinRsx struct {
-	client *http.Client
+	client   *http.Client
+	provider *Tensor9ProviderModel
 }
 
 // T9LoFiTwinRsxModel describes the resource data model.
@@ -80,18 +81,19 @@ func (r *T9LoFiTwinRsx) Configure(ctx context.Context, req resource.ConfigureReq
 		return
 	}
 
-	client, ok := req.ProviderData.(*http.Client)
+	providerData, ok := req.ProviderData.(*Tensor9ProviderData)
 
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *http.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *Tensor9ProviderData, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 
 		return
 	}
 
-	r.client = client
+	r.client = providerData.Client
+	r.provider = providerData.Model
 }
 
 func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -103,6 +105,12 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	println(fmt.Sprintf("Found provider endpoint: %s", r.provider.Endpoint))
+	println(fmt.Sprintf("Found provider api_key: %s", r.provider.ApiKey))
+
+	tflog.Debug(ctx, fmt.Sprintf("Found provider endpoint: %s", r.provider.Endpoint))
+	tflog.Debug(ctx, fmt.Sprintf("Found provider api_key: %s", r.provider.ApiKey))
 
 	// If applicable, this is a great opportunity to initialize any necessary
 	// provider client data and make a call using it.
