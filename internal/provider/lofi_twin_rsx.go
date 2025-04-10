@@ -250,66 +250,48 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 }
 
 func (r *T9LoFiTwinRsx) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data T9LoFiTwinRsxModel
+	var rsxModel T9LoFiTwinRsxModel
 
-	// Read Terraform prior state data into the model
-	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+	// Read Terraform prior state rsxModel into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &rsxModel)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// httpResp, err := r.client.Do(httpReq)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error: %s", err))
-	//     return
-	// }
+	// TODO: handle read
 
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	// Save updated rsxModel into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &rsxModel)...)
 }
 
 func (r *T9LoFiTwinRsx) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data T9LoFiTwinRsxModel
+	var rsxModel T9LoFiTwinRsxModel
 
-	// Read Terraform plan data into the model
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	// Read Terraform plan rsxModel into the model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &rsxModel)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// httpResp, err := r.client.Do(httpReq)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update example, got error: %s", err))
-	//     return
-	// }
+	// TODO: handle update
 
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	// Save updated rsxModel into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &rsxModel)...)
 }
 
 func (r *T9LoFiTwinRsx) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data T9LoFiTwinRsxModel
+	var rsxModel T9LoFiTwinRsxModel
 
-	// Read Terraform prior state data into the model
-	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+	// Read Terraform prior state rsxModel into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &rsxModel)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// httpResp, err := r.client.Do(httpReq)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
-	//     return
-	// }
+	// TODO: handle delete
 }
 
 func (r *T9LoFiTwinRsx) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
