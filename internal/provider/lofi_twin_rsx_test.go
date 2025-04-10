@@ -4,6 +4,7 @@
 package provider
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 )
 
-func TestAccExampleResource(t *testing.T) {
+func TestLoFiTwinRsx(t *testing.T) {
 
 	reactor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" && r.URL.Path == "/stack/tf/react" {
@@ -33,8 +34,44 @@ func TestAccExampleResource(t *testing.T) {
 					println(fmt.Sprintf("Error closing request body: %v\n", err))
 				}
 			}(r.Body)
-			println(fmt.Sprintf("Reactor received request:\n%s\n", string(bodyBytes)))
-			_, err = fmt.Fprint(w, `{"InfraId": "000000000000000000000000deadbeef", "ComputedProperties": { "prop1": "value1", "prop2": "value2" }}`)
+
+			var evt TfRsxEvt
+
+			err = json.Unmarshal(bodyBytes, &evt)
+			if err != nil {
+				http.Error(w, "failed to unmarshal evt", http.StatusBadRequest)
+				return
+			}
+
+			println(fmt.Sprintf("Reactor received evt: %s %s", evt.EvtType, evt.RsxType))
+
+			rsx := evt.LoFiTwinRsx
+			evtResult := TfRsxEvtResult{
+				ResultType: "Created",
+				EvtType:    "Create",
+				InfraId:    "000000000000000000000000deadbeef",
+				BeforeRsx:  *rsx,
+				AfterRsx: TfLoFiTwinRsx{
+					RsxId:        rsx.RsxId,
+					Template:     rsx.Template,
+					ProjectionId: rsx.ProjectionId,
+					PropertiesIn: rsx.PropertiesIn,
+					PropertiesOut: &map[string]string{
+						"prop1": "value1",
+						"prop2": "value2",
+					},
+				},
+			}
+
+			evtResultJson, err := json.Marshal(evtResult)
+			if err != nil {
+				http.Error(w, "failed to marshal evt result", http.StatusBadRequest)
+				return
+			}
+
+			println("Reactor sending result", string(evtResultJson))
+
+			_, err = fmt.Fprint(w, string(evtResultJson))
 			if err != nil {
 				http.Error(w, "failed to write response", http.StatusInternalServerError)
 				return
@@ -89,16 +126,16 @@ func TestAccExampleResource(t *testing.T) {
 	})
 }
 
-func testAccExampleResourceConfig(endpoint string, template string, templateFmt string, projectionId string, rsxId string, properties map[string]string) string {
-	var props string
-	if len(properties) == 0 {
-		props = "{}"
+func testAccExampleResourceConfig(endpoint string, template string, templateFmt string, projectionId string, rsxId string, propertiesIn map[string]string) string {
+	var propsIn string
+	if len(propertiesIn) == 0 {
+		propsIn = "{}"
 	} else {
-		props = "{\n"
-		for k, v := range properties {
-			props += fmt.Sprintf(`    %s = %q`+"\n", k, v)
+		propsIn = "{\n"
+		for k, v := range propertiesIn {
+			propsIn += fmt.Sprintf(`    %s = %q`+"\n", k, v)
 		}
-		props += "}\n"
+		propsIn += "}\n"
 	}
 
 	return fmt.Sprintf(`
@@ -111,7 +148,7 @@ resource "tensor9_lofi_twin" "test_twin" {
   template_fmt = %[3]q
   projection_id = %[4]q
   rsx_id = %[5]q
-  properties = %s
+  properties_in = %s
 }
-`, endpoint, template, templateFmt, projectionId, rsxId, props)
+`, endpoint, template, templateFmt, projectionId, rsxId, propsIn)
 }
