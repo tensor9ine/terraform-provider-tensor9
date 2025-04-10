@@ -45,51 +45,71 @@ func TestLoFiTwinRsx(t *testing.T) {
 
 			println(fmt.Sprintf("Reactor received evt: %s %s", evt.EvtType, evt.RsxType))
 
-			rsx := evt.LoFiTwinRsx
-			infraId := "000000000000000000000000deadbeef"
-			propertiesOut := make(map[string]string)
-			for k, v := range *rsx.Properties {
-				propertiesOut[k] = v
-			}
-			propertiesOut["new1"] = "value1"
-			propertiesOut["new2"] = "value2"
+			switch evt.EvtType {
+			case "Create":
+				println("Reactor handling Create event")
 
-			for k, v := range propertiesOut {
-				println(fmt.Sprintf("%s = %s", k, v))
-			}
+				rsx := evt.LoFiTwinRsx
+				infraId := "000000000000000000000000deadbeef"
+				propertiesOut := make(map[string]string)
+				for k, v := range *rsx.Properties {
+					propertiesOut[k] = v
+				}
+				propertiesOut["new1"] = "value1"
+				propertiesOut["new2"] = "value2"
 
-			evtResult := TfRsxEvtResult{
-				EvtType:    evt.EvtType,
-				RsxType:    evt.RsxType,
-				ResultType: "Created",
-				LoFiTwinRsx: &Delta[TfLoFiTwinRsx]{
-					Before: rsx,
-					After: &TfLoFiTwinRsx{
-						RsxId:        rsx.RsxId,
-						Template:     rsx.Template,
-						ProjectionId: rsx.ProjectionId,
-						Properties:   &propertiesOut,
-						InfraId:      &infraId,
+				for k, v := range propertiesOut {
+					println(fmt.Sprintf("%s = %s", k, v))
+				}
+
+				evtResult := TfRsxEvtResult{
+					EvtType:    evt.EvtType,
+					RsxType:    evt.RsxType,
+					ResultType: "Created",
+					LoFiTwinRsx: &Delta[TfLoFiTwinRsx]{
+						Before: rsx,
+						After: &TfLoFiTwinRsx{
+							RsxId:        rsx.RsxId,
+							Template:     rsx.Template,
+							ProjectionId: rsx.ProjectionId,
+							Properties:   &propertiesOut,
+							InfraId:      &infraId,
+						},
 					},
-				},
-				Reason: nil,
-			}
+					Reason: nil,
+				}
 
-			evtResultJson, err := json.Marshal(evtResult)
-			if err != nil {
-				http.Error(w, "failed to marshal evt result", http.StatusBadRequest)
+				evtResultJson, err := json.Marshal(evtResult)
+				if err != nil {
+					http.Error(w, "failed to marshal evt result", http.StatusBadRequest)
+					return
+				}
+
+				println("Reactor sending result", string(evtResultJson))
+
+				_, err = fmt.Fprint(w, string(evtResultJson))
+				if err != nil {
+					http.Error(w, "failed to write response", http.StatusInternalServerError)
+					return
+				}
+
+				return
+			case "Read":
+				println("Reactor handling Read event")
+				println("TODO: implement Read event handling")
+				return
+			case "Update":
+				println("Reactor handling Update event")
+				println("TODO: implement Update event handling")
+				return
+			case "Delete":
+				println("Reactor handling Delete event")
+				println("TODO: implement Delete event handling")
+				return
+			default:
+				http.Error(w, "unknown evt type", http.StatusBadRequest)
 				return
 			}
-
-			println("Reactor sending result", string(evtResultJson))
-
-			_, err = fmt.Fprint(w, string(evtResultJson))
-			if err != nil {
-				http.Error(w, "failed to write response", http.StatusInternalServerError)
-				return
-			}
-
-			return
 		}
 
 		http.NotFound(w, r)

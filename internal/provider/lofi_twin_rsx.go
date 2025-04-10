@@ -78,6 +78,25 @@ type Delta[T any] struct {
 	After  *T `json:"after"`
 }
 
+// InfraParam represents a parameter with an ID, type, and value.
+type InfraParam struct {
+	Id    string         `json:"id"`
+	Type  InfraParamType `json:"type"`
+	Value string         `json:"value"`
+}
+
+type InfraParamType string
+
+const (
+	Bool   InfraParamType = "Bool"
+	I32    InfraParamType = "I32"
+	I64    InfraParamType = "I64"
+	F32    InfraParamType = "F32"
+	F64    InfraParamType = "F64"
+	Str    InfraParamType = "Str"
+	Secret InfraParamType = "Secret"
+)
+
 func (r *T9LoFiTwinRsx) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_lofi_twin"
 }
