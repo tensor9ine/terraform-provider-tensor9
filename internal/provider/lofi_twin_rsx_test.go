@@ -47,6 +47,17 @@ func TestLoFiTwinRsx(t *testing.T) {
 
 			rsx := evt.LoFiTwinRsx
 			infraId := "000000000000000000000000deadbeef"
+			propertiesOut := make(map[string]string)
+			for k, v := range *rsx.Properties {
+				propertiesOut[k] = v
+			}
+			propertiesOut["new1"] = "value1"
+			propertiesOut["new2"] = "value2"
+
+			for k, v := range propertiesOut {
+				println(fmt.Sprintf("%s = %s", k, v))
+			}
+
 			evtResult := TfRsxEvtResult{
 				ResultType: "Created",
 				EvtType:    "Create",
@@ -55,12 +66,8 @@ func TestLoFiTwinRsx(t *testing.T) {
 					RsxId:        rsx.RsxId,
 					Template:     rsx.Template,
 					ProjectionId: rsx.ProjectionId,
-					PropertiesIn: rsx.PropertiesIn,
+					Properties:   &propertiesOut,
 					InfraId:      &infraId,
-					PropertiesOut: &map[string]string{
-						"prop1": "value1",
-						"prop2": "value2",
-					},
 				},
 			}
 
@@ -91,7 +98,7 @@ func TestLoFiTwinRsx(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccExampleResourceConfig(reactor.URL, "{}", "Terraform", "0000000000000000:0000000000000000:0000000000000000", "rsx_a", map[string]string{"key1": "value1"}),
+				Config: testAccExampleResourceConfig(reactor.URL, "{}", "Terraform", "0000000000000000:0000000000000000:0000000000000000", "rsx_a", map[string]string{"original1": "value1"}),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(
 						"tensor9_lofi_twin.test_twin",
@@ -109,11 +116,11 @@ func TestLoFiTwinRsx(t *testing.T) {
 				// example code does not have an actual upstream service.
 				// Once the Read method is able to refresh information from
 				// the upstream service, this can be removed.
-				ImportStateVerifyIgnore: []string{"template", "template_fmt", "projection_id", "rsx_id", "infra_id", "properties", "computed_properties"}, // TODO: remove this once ::Read is implemented
+				ImportStateVerifyIgnore: []string{"template", "template_fmt", "projection_id", "rsx_id", "infra_id", "properties_in", "properties_out"}, // TODO: remove this once ::Read is implemented
 			},
 			// Update and Read testing
 			{
-				Config: testAccExampleResourceConfig(reactor.URL, "{}", "Terraform", "0000000000000000:0000000000000000:0000000000000000", "rsx_a", map[string]string{"key1": "value1"}),
+				Config: testAccExampleResourceConfig(reactor.URL, "{}", "Terraform", "0000000000000000:0000000000000000:0000000000000000", "rsx_a", map[string]string{"original1": "value1"}),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(
 						"tensor9_lofi_twin.test_twin",

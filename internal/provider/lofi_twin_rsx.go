@@ -54,10 +54,8 @@ type TfLoFiTwinRsx struct {
 	RsxId        *string            `json:"rsxId"`
 	Template     *InfraTemplate     `json:"template"`
 	ProjectionId *string            `json:"projectionId"`
-	PropertiesIn *map[string]string `json:"propertiesIn"`
-
-	InfraId       *string            `json:"infraId"`
-	PropertiesOut *map[string]string `json:"propertiesOut"`
+	Properties   *map[string]string `json:"properties"`
+	InfraId      *string            `json:"infraId"`
 }
 
 type TfRsxEvt struct {
@@ -189,9 +187,8 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 				Raw: rsxModel.Template.ValueString(),
 				Fmt: rsxModel.TemplateFmt.ValueString(),
 			},
-			ProjectionId:  rsxModel.ProjectionId.ValueStringPointer(),
-			PropertiesIn:  &propertiesIn,
-			PropertiesOut: nil,
+			ProjectionId: rsxModel.ProjectionId.ValueStringPointer(),
+			Properties:   &propertiesIn,
 		},
 	}
 	evtJson, err := json.Marshal(evt)
@@ -238,7 +235,7 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 	rsxModel.InfraId = types.StringValue(*evtResult.AfterRsx.InfraId)
 	rsxModel.Id = rsxModel.InfraId
 
-	propertiesOut, diag := types.MapValueFrom(ctx, types.StringType, evtResult.AfterRsx.PropertiesOut)
+	propertiesOut, diag := types.MapValueFrom(ctx, types.StringType, evtResult.AfterRsx.Properties)
 	resp.Diagnostics.Append(diag...)
 	rsxModel.PropertiesOut = propertiesOut
 
