@@ -215,7 +215,7 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 	}
 
 	evtResultStr := string(evtResultBytes)
-	println("Received evt result", evtResultStr)
+	//println("Received evt result", evtResultStr)
 	tflog.Debug(ctx, fmt.Sprintf("Create response body: %s", evtResultStr))
 
 	err = evtResultResp.Body.Close()
@@ -233,7 +233,7 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 	}
 
 	tflog.Debug(ctx, fmt.Sprintf("Got tf evt result: %s", evtResultStr))
-	println(fmt.Sprintf("Got tf evt result for tf stack reactor: %s", evtResultStr))
+	//println(fmt.Sprintf("Got tf evt result for tf stack reactor: %s", evtResultStr))
 
 	rsxModel.InfraId = types.StringValue(evtResult.InfraId)
 	rsxModel.Id = rsxModel.InfraId
@@ -243,7 +243,7 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 	rsxModel.PropertiesOut = propertiesOut
 
 	tflog.Debug(ctx, fmt.Sprintf("created an lo fi twin resource; infra_id=%s", rsxModel.InfraId.ValueString()))
-	println(fmt.Sprintf("created lo fi twin resource; infra_id=%s; rsx_id=%s; properties_out=%s", rsxModel.InfraId.ValueString(), rsxModel.RsxId.ValueString(), rsxModel.PropertiesOut.String()))
+	//println(fmt.Sprintf("created lo fi twin resource; infra_id=%s; rsx_id=%s; properties_out=%s", rsxModel.InfraId.ValueString(), rsxModel.RsxId.ValueString(), rsxModel.PropertiesOut.String()))
 
 	// Save rsxModel into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &rsxModel)...)
