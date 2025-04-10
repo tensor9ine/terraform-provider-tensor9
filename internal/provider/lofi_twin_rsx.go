@@ -8,17 +8,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
-	"io"
-	"net/http"
-
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"io"
+	"net/http"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -52,10 +51,12 @@ type InfraTemplate struct {
 }
 
 type TfLoFiTwinRsx struct {
-	RsxId         string             `json:"rsxId"`
-	Template      *InfraTemplate     `json:"template"`
-	ProjectionId  string             `json:"projectionId"`
-	PropertiesIn  map[string]string  `json:"propertiesIn"`
+	RsxId        *string            `json:"rsxId"`
+	Template     *InfraTemplate     `json:"template"`
+	ProjectionId *string            `json:"projectionId"`
+	PropertiesIn *map[string]string `json:"propertiesIn"`
+
+	InfraId       *string            `json:"infraId"`
 	PropertiesOut *map[string]string `json:"propertiesOut"`
 }
 
@@ -69,7 +70,6 @@ type TfRsxEvt struct {
 type TfRsxEvtResult struct {
 	ResultType string        `json:"resultType"`
 	EvtType    string        `json:"evtType"`
-	InfraId    string        `json:"infraId"`
 	BeforeRsx  TfLoFiTwinRsx `json:"beforeRsx"`
 	AfterRsx   TfLoFiTwinRsx `json:"afterRsx"`
 }
@@ -178,22 +178,22 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 	tflog.Debug(ctx, fmt.Sprintf("Found provider endpoint: %s", r.provider.Endpoint))
 	tflog.Debug(ctx, fmt.Sprintf("Found provider api_key: %s", r.provider.ApiKey))
 
-	evt := TfRsxEvt{
+	propertiesIn := mapToStringMap(rsxModel.PropertiesIn)
+	var evt = TfRsxEvt{
 		ApiKey:  r.provider.ApiKey.ValueString(),
 		RsxType: "LoFiTwin",
 		EvtType: "Create",
 		LoFiTwinRsx: &TfLoFiTwinRsx{
-			RsxId: rsxModel.RsxId.ValueString(),
+			RsxId: rsxModel.RsxId.ValueStringPointer(),
 			Template: &InfraTemplate{
 				Raw: rsxModel.Template.ValueString(),
 				Fmt: rsxModel.TemplateFmt.ValueString(),
 			},
-			ProjectionId:  rsxModel.ProjectionId.ValueString(),
-			PropertiesIn:  mapToStringMap(rsxModel.PropertiesIn),
+			ProjectionId:  rsxModel.ProjectionId.ValueStringPointer(),
+			PropertiesIn:  &propertiesIn,
 			PropertiesOut: nil,
 		},
 	}
-
 	evtJson, err := json.Marshal(evt)
 	if err != nil {
 		resp.Diagnostics.AddError("JSON Encoding Error", fmt.Sprintf("Failed to encode request body: %s", err))
@@ -235,7 +235,7 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 	tflog.Debug(ctx, fmt.Sprintf("Got tf evt result: %s", evtResultStr))
 	//println(fmt.Sprintf("Got tf evt result for tf stack reactor: %s", evtResultStr))
 
-	rsxModel.InfraId = types.StringValue(evtResult.InfraId)
+	rsxModel.InfraId = types.StringValue(*evtResult.AfterRsx.InfraId)
 	rsxModel.Id = rsxModel.InfraId
 
 	propertiesOut, diag := types.MapValueFrom(ctx, types.StringType, evtResult.AfterRsx.PropertiesOut)

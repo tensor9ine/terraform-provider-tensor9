@@ -46,16 +46,17 @@ func TestLoFiTwinRsx(t *testing.T) {
 			println(fmt.Sprintf("Reactor received evt: %s %s", evt.EvtType, evt.RsxType))
 
 			rsx := evt.LoFiTwinRsx
+			infraId := "000000000000000000000000deadbeef"
 			evtResult := TfRsxEvtResult{
 				ResultType: "Created",
 				EvtType:    "Create",
-				InfraId:    "000000000000000000000000deadbeef",
 				BeforeRsx:  *rsx,
 				AfterRsx: TfLoFiTwinRsx{
 					RsxId:        rsx.RsxId,
 					Template:     rsx.Template,
 					ProjectionId: rsx.ProjectionId,
 					PropertiesIn: rsx.PropertiesIn,
+					InfraId:      &infraId,
 					PropertiesOut: &map[string]string{
 						"prop1": "value1",
 						"prop2": "value2",
