@@ -70,6 +70,7 @@ type TfRsxEvtResult struct {
 	RsxType     string                `json:"rsxType"`
 	ResultType  string                `json:"resultType"`
 	LoFiTwinRsx *Delta[TfLoFiTwinRsx] `json:"loFiTwinRsx"`
+	Reason      *string               `json:"reason"`
 }
 
 type Delta[T any] struct {

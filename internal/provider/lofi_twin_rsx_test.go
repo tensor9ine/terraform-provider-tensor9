@@ -59,8 +59,9 @@ func TestLoFiTwinRsx(t *testing.T) {
 			}
 
 			evtResult := TfRsxEvtResult{
+				EvtType:    evt.EvtType,
+				RsxType:    evt.RsxType,
 				ResultType: "Created",
-				EvtType:    "Create",
 				LoFiTwinRsx: &Delta[TfLoFiTwinRsx]{
 					Before: rsx,
 					After: &TfLoFiTwinRsx{
@@ -71,6 +72,7 @@ func TestLoFiTwinRsx(t *testing.T) {
 						InfraId:      &infraId,
 					},
 				},
+				Reason: nil,
 			}
 
 			evtResultJson, err := json.Marshal(evtResult)
