@@ -73,6 +73,7 @@ func TestLoFiTwinRsx(t *testing.T) {
 							Template:     rsx.Template,
 							ProjectionId: rsx.ProjectionId,
 							Properties:   &propertiesOut,
+							Schema:       rsx.Schema,
 							InfraId:      &infraId,
 						},
 					},
@@ -116,13 +117,22 @@ func TestLoFiTwinRsx(t *testing.T) {
 	}))
 	defer reactor.Close()
 
+	schema := map[string]TfRsxPropType{"original1": "Str", "new1": "Str", "new2": "Str"}
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccExampleResourceConfig(reactor.URL, "{}", "Terraform", "0000000000000000:0000000000000000:0000000000000000", "rsx_a", map[string]string{"original1": "value1"}),
+				Config: testAccExampleResourceConfig(
+					reactor.URL,
+					"{}",
+					"Terraform",
+					"0000000000000000:0000000000000000:0000000000000000",
+					"rsx_a",
+					map[string]string{"original1": "value1"},
+					schema,
+				),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(
 						"tensor9_lofi_twin.test_twin",
@@ -140,11 +150,19 @@ func TestLoFiTwinRsx(t *testing.T) {
 				// example code does not have an actual upstream service.
 				// Once the Read method is able to refresh information from
 				// the upstream service, this can be removed.
-				ImportStateVerifyIgnore: []string{"template", "template_fmt", "projection_id", "rsx_id", "infra_id", "properties_in", "properties_out"}, // TODO: remove this once ::Read is implemented
+				ImportStateVerifyIgnore: []string{"template", "template_fmt", "projection_id", "rsx_id", "infra_id", "properties_in", "schema", "properties_out"}, // TODO: remove this once ::Read is implemented
 			},
 			// Update and Read testing
 			{
-				Config: testAccExampleResourceConfig(reactor.URL, "{}", "Terraform", "0000000000000000:0000000000000000:0000000000000000", "rsx_a", map[string]string{"original1": "value1"}),
+				Config: testAccExampleResourceConfig(
+					reactor.URL,
+					"{}",
+					"Terraform",
+					"0000000000000000:0000000000000000:0000000000000000",
+					"rsx_a",
+					map[string]string{"original1": "value1"},
+					schema,
+				),
 				ConfigStateChecks: []statecheck.StateCheck{
 					statecheck.ExpectKnownValue(
 						"tensor9_lofi_twin.test_twin",
@@ -158,16 +176,35 @@ func TestLoFiTwinRsx(t *testing.T) {
 	})
 }
 
-func testAccExampleResourceConfig(endpoint string, template string, templateFmt string, projectionId string, rsxId string, propertiesIn map[string]string) string {
-	var propsIn string
+func testAccExampleResourceConfig(
+	endpoint string,
+	template string,
+	templateFmt string,
+	projectionId string,
+	rsxId string,
+	propertiesIn map[string]string,
+	schema map[string]TfRsxPropType,
+) string {
+	var propertiesInStr string
 	if len(propertiesIn) == 0 {
-		propsIn = "{}"
+		propertiesInStr = "{}"
 	} else {
-		propsIn = "{\n"
+		propertiesInStr = "{\n"
 		for k, v := range propertiesIn {
-			propsIn += fmt.Sprintf(`    %s = %q`+"\n", k, v)
+			propertiesInStr += fmt.Sprintf(`    %s = %q`+"\n", k, v)
 		}
-		propsIn += "}\n"
+		propertiesInStr += "}\n"
+	}
+
+	var schemaStr string
+	if len(schema) == 0 {
+		schemaStr = "{}"
+	} else {
+		schemaStr = "{\n"
+		for k, v := range schema {
+			schemaStr += fmt.Sprintf(`    %q = "%s"`+"\n", k, v)
+		}
+		schemaStr += "}\n"
 	}
 
 	return fmt.Sprintf(`
@@ -181,6 +218,7 @@ resource "tensor9_lofi_twin" "test_twin" {
   projection_id = %[4]q
   rsx_id = %[5]q
   properties_in = %s
+  schema = %s
 }
-`, endpoint, template, templateFmt, projectionId, rsxId, propsIn)
+`, endpoint, template, templateFmt, projectionId, rsxId, propertiesInStr, schemaStr)
 }

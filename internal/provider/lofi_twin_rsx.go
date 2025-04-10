@@ -39,23 +39,25 @@ type T9LoFiTwinRsxModel struct {
 	TemplateFmt   types.String `tfsdk:"template_fmt"`
 	ProjectionId  types.String `tfsdk:"projection_id"`
 	PropertiesIn  types.Map    `tfsdk:"properties_in"`
+	Schema        types.Map    `tfsdk:"schema"`
 	PropertiesOut types.Map    `tfsdk:"properties_out"`
 	RsxId         types.String `tfsdk:"rsx_id"`
 	InfraId       types.String `tfsdk:"infra_id"`
 	Id            types.String `tfsdk:"id"`
 }
 
-type InfraTemplate struct {
+type TfLoFiTemplate struct {
 	Raw string `json:"raw"`
 	Fmt string `json:"fmt"`
 }
 
 type TfLoFiTwinRsx struct {
-	RsxId        *string            `json:"rsxId"`
-	Template     *InfraTemplate     `json:"template"`
-	ProjectionId *string            `json:"projectionId"`
-	Properties   *map[string]string `json:"properties"`
-	InfraId      *string            `json:"infraId"`
+	RsxId        *string                   `json:"rsxId"`
+	Template     *TfLoFiTemplate           `json:"template"`
+	ProjectionId *string                   `json:"projectionId"`
+	Properties   *map[string]string        `json:"properties"`
+	Schema       *map[string]TfRsxPropType `json:"schema"`
+	InfraId      *string                   `json:"infraId"`
 }
 
 type TfRsxEvt struct {
@@ -78,23 +80,16 @@ type Delta[T any] struct {
 	After  *T `json:"after"`
 }
 
-// InfraParam represents a parameter with an ID, type, and value.
-type InfraParam struct {
-	Id    string         `json:"id"`
-	Type  InfraParamType `json:"type"`
-	Value string         `json:"value"`
-}
-
-type InfraParamType string
+type TfRsxPropType string
 
 const (
-	Bool   InfraParamType = "Bool"
-	I32    InfraParamType = "I32"
-	I64    InfraParamType = "I64"
-	F32    InfraParamType = "F32"
-	F64    InfraParamType = "F64"
-	Str    InfraParamType = "Str"
-	Secret InfraParamType = "Secret"
+	Bool   TfRsxPropType = "Bool"
+	I32    TfRsxPropType = "I32"
+	I64    TfRsxPropType = "I64"
+	F32    TfRsxPropType = "F32"
+	F64    TfRsxPropType = "F64"
+	Str    TfRsxPropType = "Str"
+	Secret TfRsxPropType = "Secret"
 )
 
 func (r *T9LoFiTwinRsx) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -126,6 +121,14 @@ func (r *T9LoFiTwinRsx) Schema(ctx context.Context, req resource.SchemaRequest, 
 				ElementType:         types.StringType,
 				Required:            true,
 				MarkdownDescription: "A map of properties with which to configure the resource",
+				PlanModifiers: []planmodifier.Map{
+					mapplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"schema": schema.MapAttribute{
+				ElementType:         types.StringType,
+				Required:            true,
+				MarkdownDescription: "The schema describing the properties of the resource",
 				PlanModifiers: []planmodifier.Map{
 					mapplanmodifier.UseStateForUnknown(),
 				},
@@ -202,18 +205,20 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 	tflog.Debug(ctx, fmt.Sprintf("Found provider api_key: %s", r.provider.ApiKey))
 
 	propertiesIn := mapToStringMap(rsxModel.PropertiesIn)
+	schema := schematize(rsxModel.Schema)
 	var evt = TfRsxEvt{
 		ApiKey:  r.provider.ApiKey.ValueString(),
 		RsxType: "LoFiTwin",
 		EvtType: "Create",
 		LoFiTwinRsx: &TfLoFiTwinRsx{
 			RsxId: rsxModel.RsxId.ValueStringPointer(),
-			Template: &InfraTemplate{
+			Template: &TfLoFiTemplate{
 				Raw: rsxModel.Template.ValueString(),
 				Fmt: rsxModel.TemplateFmt.ValueString(),
 			},
 			ProjectionId: rsxModel.ProjectionId.ValueStringPointer(),
 			Properties:   &propertiesIn,
+			Schema:       &schema,
 		},
 	}
 	evtJson, err := json.Marshal(evt)
@@ -325,6 +330,16 @@ func mapToStringMap(attrMap types.Map) map[string]string {
 	for k, v := range attrMap.Elements() {
 		if strVal, ok := v.(types.String); ok {
 			result[k] = strVal.ValueString()
+		}
+	}
+	return result
+}
+
+func schematize(attrMap types.Map) map[string]TfRsxPropType {
+	result := make(map[string]TfRsxPropType)
+	for k, v := range attrMap.Elements() {
+		if strVal, ok := v.(types.String); ok {
+			result[k] = TfRsxPropType(strVal.ValueString())
 		}
 	}
 	return result
