@@ -66,10 +66,15 @@ type TfRsxEvt struct {
 }
 
 type TfRsxEvtResult struct {
-	ResultType string        `json:"resultType"`
-	EvtType    string        `json:"evtType"`
-	BeforeRsx  TfLoFiTwinRsx `json:"beforeRsx"`
-	AfterRsx   TfLoFiTwinRsx `json:"afterRsx"`
+	EvtType     string                `json:"evtType"`
+	RsxType     string                `json:"rsxType"`
+	ResultType  string                `json:"resultType"`
+	LoFiTwinRsx *Delta[TfLoFiTwinRsx] `json:"loFiTwinRsx"`
+}
+
+type Delta[T any] struct {
+	Before *T `json:"before"`
+	After  *T `json:"after"`
 }
 
 func (r *T9LoFiTwinRsx) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -232,10 +237,10 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 	tflog.Debug(ctx, fmt.Sprintf("Got tf evt result: %s", evtResultStr))
 	//println(fmt.Sprintf("Got tf evt result for tf stack reactor: %s", evtResultStr))
 
-	rsxModel.InfraId = types.StringValue(*evtResult.AfterRsx.InfraId)
+	rsxModel.InfraId = types.StringValue(*evtResult.LoFiTwinRsx.After.InfraId)
 	rsxModel.Id = rsxModel.InfraId
 
-	propertiesOut, diag := types.MapValueFrom(ctx, types.StringType, evtResult.AfterRsx.Properties)
+	propertiesOut, diag := types.MapValueFrom(ctx, types.StringType, evtResult.LoFiTwinRsx.After.Properties)
 	resp.Diagnostics.Append(diag...)
 	rsxModel.PropertiesOut = propertiesOut
 

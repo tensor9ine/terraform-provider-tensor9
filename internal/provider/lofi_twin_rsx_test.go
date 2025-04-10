@@ -61,13 +61,15 @@ func TestLoFiTwinRsx(t *testing.T) {
 			evtResult := TfRsxEvtResult{
 				ResultType: "Created",
 				EvtType:    "Create",
-				BeforeRsx:  *rsx,
-				AfterRsx: TfLoFiTwinRsx{
-					RsxId:        rsx.RsxId,
-					Template:     rsx.Template,
-					ProjectionId: rsx.ProjectionId,
-					Properties:   &propertiesOut,
-					InfraId:      &infraId,
+				LoFiTwinRsx: &Delta[TfLoFiTwinRsx]{
+					Before: rsx,
+					After: &TfLoFiTwinRsx{
+						RsxId:        rsx.RsxId,
+						Template:     rsx.Template,
+						ProjectionId: rsx.ProjectionId,
+						Properties:   &propertiesOut,
+						InfraId:      &infraId,
+					},
 				},
 			}
 
