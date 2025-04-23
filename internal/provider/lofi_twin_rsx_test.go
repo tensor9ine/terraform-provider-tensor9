@@ -52,7 +52,7 @@ func TestLoFiTwinRsx(t *testing.T) {
 				rsx := evt.LoFiTwinRsx
 				infraId := "000000000000000000000000deadbeef"
 				propertiesOut := make(map[string]string)
-				for k, v := range *rsx.Properties {
+				for k, v := range *rsx.Params {
 					propertiesOut[k] = v
 				}
 				propertiesOut["new1"] = "value1"
@@ -72,7 +72,7 @@ func TestLoFiTwinRsx(t *testing.T) {
 							RsxId:        rsx.RsxId,
 							Template:     rsx.Template,
 							ProjectionId: rsx.ProjectionId,
-							Properties:   &propertiesOut,
+							Params:       &propertiesOut,
 							Schema:       rsx.Schema,
 							InfraId:      &infraId,
 						},
@@ -150,7 +150,7 @@ func TestLoFiTwinRsx(t *testing.T) {
 				// example code does not have an actual upstream service.
 				// Once the Read method is able to refresh information from
 				// the upstream service, this can be removed.
-				ImportStateVerifyIgnore: []string{"template", "template_fmt", "projection_id", "rsx_id", "infra_id", "properties_in", "schema", "properties_out"}, // TODO: remove this once ::Read is implemented
+				ImportStateVerifyIgnore: []string{"template", "template_fmt", "projection_id", "rsx_id", "infra_id", "params", "schema", "outputs"}, // TODO: remove this once ::Read is implemented
 			},
 			// Update and Read testing
 			{
@@ -182,18 +182,18 @@ func testAccExampleResourceConfig(
 	templateFmt string,
 	projectionId string,
 	rsxId string,
-	propertiesIn map[string]string,
+	params map[string]string,
 	schema map[string]TfRsxPropType,
 ) string {
-	var propertiesInStr string
-	if len(propertiesIn) == 0 {
-		propertiesInStr = "{}"
+	var paramsStr string
+	if len(params) == 0 {
+		paramsStr = "{}"
 	} else {
-		propertiesInStr = "{\n"
-		for k, v := range propertiesIn {
-			propertiesInStr += fmt.Sprintf(`    %s = %q`+"\n", k, v)
+		paramsStr = "{\n"
+		for k, v := range params {
+			paramsStr += fmt.Sprintf(`    %s = %q`+"\n", k, v)
 		}
-		propertiesInStr += "}\n"
+		paramsStr += "}\n"
 	}
 
 	var schemaStr string
@@ -217,8 +217,8 @@ resource "tensor9_lofi_twin" "test_twin" {
   template_fmt = %[3]q
   projection_id = %[4]q
   rsx_id = %[5]q
-  properties_in = %s
+  params = %s
   schema = %s
 }
-`, endpoint, template, templateFmt, projectionId, rsxId, propertiesInStr, schemaStr)
+`, endpoint, template, templateFmt, projectionId, rsxId, paramsStr, schemaStr)
 }

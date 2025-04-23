@@ -35,15 +35,15 @@ type T9LoFiTwinRsx struct {
 }
 
 type T9LoFiTwinRsxModel struct {
-	Template      types.String `tfsdk:"template"`
-	TemplateFmt   types.String `tfsdk:"template_fmt"`
-	ProjectionId  types.String `tfsdk:"projection_id"`
-	PropertiesIn  types.Map    `tfsdk:"properties_in"`
-	Schema        types.Map    `tfsdk:"schema"`
-	PropertiesOut types.Map    `tfsdk:"properties_out"`
-	RsxId         types.String `tfsdk:"rsx_id"`
-	InfraId       types.String `tfsdk:"infra_id"`
-	Id            types.String `tfsdk:"id"`
+	Template     types.String `tfsdk:"template"`
+	TemplateFmt  types.String `tfsdk:"template_fmt"`
+	ProjectionId types.String `tfsdk:"projection_id"`
+	Params       types.Map    `tfsdk:"params"`
+	Schema       types.Map    `tfsdk:"schema"`
+	Outputs      types.Map    `tfsdk:"outputs"`
+	RsxId        types.String `tfsdk:"rsx_id"`
+	InfraId      types.String `tfsdk:"infra_id"`
+	Id           types.String `tfsdk:"id"`
 }
 
 type TfLoFiTemplate struct {
@@ -55,8 +55,9 @@ type TfLoFiTwinRsx struct {
 	RsxId        *string                   `json:"rsxId"`
 	Template     *TfLoFiTemplate           `json:"template"`
 	ProjectionId *string                   `json:"projectionId"`
-	Properties   *map[string]string        `json:"properties"`
+	Params       *map[string]string        `json:"params"`
 	Schema       *map[string]TfRsxPropType `json:"schema"`
+	Outputs      *map[string]string        `json:"outputs"`
 	InfraId      *string                   `json:"infraId"`
 }
 
@@ -117,10 +118,10 @@ func (r *T9LoFiTwinRsx) Schema(ctx context.Context, req resource.SchemaRequest, 
 				Optional:            false,
 				Required:            true,
 			},
-			"properties_in": schema.MapAttribute{
+			"params": schema.MapAttribute{
 				ElementType:         types.StringType,
 				Required:            true,
-				MarkdownDescription: "A map of properties with which to configure the resource",
+				MarkdownDescription: "A map of parameters to pass to the template that specified the resource",
 				PlanModifiers: []planmodifier.Map{
 					mapplanmodifier.UseStateForUnknown(),
 				},
@@ -133,10 +134,10 @@ func (r *T9LoFiTwinRsx) Schema(ctx context.Context, req resource.SchemaRequest, 
 					mapplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"properties_out": schema.MapAttribute{
+			"outputs": schema.MapAttribute{
 				ElementType:         types.StringType,
 				Computed:            true,
-				MarkdownDescription: "A map of properties computed after resource create/update",
+				MarkdownDescription: "A map of outputs published by the resource upon create/update",
 				PlanModifiers: []planmodifier.Map{
 					mapplanmodifier.UseStateForUnknown(),
 				},
@@ -204,7 +205,7 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 	tflog.Debug(ctx, fmt.Sprintf("Found provider endpoint: %s", r.provider.Endpoint))
 	tflog.Debug(ctx, fmt.Sprintf("Found provider api_key: %s", r.provider.ApiKey))
 
-	propertiesIn := mapToStringMap(rsxModel.PropertiesIn)
+	params := mapToStringMap(rsxModel.Params)
 	schema := schematize(rsxModel.Schema)
 	var evt = TfRsxEvt{
 		ApiKey:  r.provider.ApiKey.ValueString(),
@@ -217,7 +218,7 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 				Fmt: rsxModel.TemplateFmt.ValueString(),
 			},
 			ProjectionId: rsxModel.ProjectionId.ValueStringPointer(),
-			Properties:   &propertiesIn,
+			Params:       &params,
 			Schema:       &schema,
 		},
 	}
@@ -265,12 +266,12 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 	rsxModel.InfraId = types.StringValue(*evtResult.LoFiTwinRsx.After.InfraId)
 	rsxModel.Id = rsxModel.InfraId
 
-	propertiesOut, diag := types.MapValueFrom(ctx, types.StringType, evtResult.LoFiTwinRsx.After.Properties)
+	outputs, diag := types.MapValueFrom(ctx, types.StringType, evtResult.LoFiTwinRsx.After.Outputs)
 	resp.Diagnostics.Append(diag...)
-	rsxModel.PropertiesOut = propertiesOut
+	rsxModel.Outputs = outputs
 
 	tflog.Debug(ctx, fmt.Sprintf("created an lo fi twin resource; infra_id=%s", rsxModel.InfraId.ValueString()))
-	//println(fmt.Sprintf("created lo fi twin resource; infra_id=%s; rsx_id=%s; properties_out=%s", rsxModel.InfraId.ValueString(), rsxModel.RsxId.ValueString(), rsxModel.PropertiesOut.String()))
+	//println(fmt.Sprintf("created lo fi twin resource; infra_id=%s; rsx_id=%s; outputs=%s", rsxModel.InfraId.ValueString(), rsxModel.RsxId.ValueString(), rsxModel.Outputs.String()))
 
 	// Save rsxModel into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &rsxModel)...)
