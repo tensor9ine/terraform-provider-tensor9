@@ -6,15 +6,14 @@ package provider
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/knownvalue"
 	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 )
 
 func TestLoFiTwinRsx(t *testing.T) {
@@ -52,7 +51,7 @@ func TestLoFiTwinRsx(t *testing.T) {
 				rsx := evt.LoFiTwinRsx
 				infraId := "000000000000000000000000deadbeef"
 				propertiesOut := make(map[string]string)
-				for k, v := range *rsx.Params {
+				for k, v := range *rsx.Vars {
 					propertiesOut[k] = v
 				}
 				propertiesOut["new1"] = "value1"
@@ -72,7 +71,7 @@ func TestLoFiTwinRsx(t *testing.T) {
 							RsxId:        rsx.RsxId,
 							Template:     rsx.Template,
 							ProjectionId: rsx.ProjectionId,
-							Params:       &propertiesOut,
+							Vars:         &propertiesOut,
 							Schema:       rsx.Schema,
 							InfraId:      &infraId,
 						},
@@ -150,7 +149,7 @@ func TestLoFiTwinRsx(t *testing.T) {
 				// example code does not have an actual upstream service.
 				// Once the Read method is able to refresh information from
 				// the upstream service, this can be removed.
-				ImportStateVerifyIgnore: []string{"template", "template_fmt", "projection_id", "rsx_id", "infra_id", "params", "schema", "outputs"}, // TODO: remove this once ::Read is implemented
+				ImportStateVerifyIgnore: []string{"template", "template_fmt", "projection_id", "rsx_id", "infra_id", "vars", "schema", "outputs"}, // TODO: remove this once ::Read is implemented
 			},
 			// Update and Read testing
 			{
@@ -182,18 +181,18 @@ func testAccExampleResourceConfig(
 	templateFmt string,
 	projectionId string,
 	rsxId string,
-	params map[string]string,
+	vars map[string]string,
 	schema map[string]TfRsxPropType,
 ) string {
-	var paramsStr string
-	if len(params) == 0 {
-		paramsStr = "{}"
+	var varsStr string
+	if len(vars) == 0 {
+		varsStr = "{}"
 	} else {
-		paramsStr = "{\n"
-		for k, v := range params {
-			paramsStr += fmt.Sprintf(`    %s = %q`+"\n", k, v)
+		varsStr = "{\n"
+		for k, v := range vars {
+			varsStr += fmt.Sprintf(`    %s = %q`+"\n", k, v)
 		}
-		paramsStr += "}\n"
+		varsStr += "}\n"
 	}
 
 	var schemaStr string
@@ -217,8 +216,8 @@ resource "tensor9_lofi_twin" "test_twin" {
   template_fmt = %[3]q
   projection_id = %[4]q
   rsx_id = %[5]q
-  params = %s
+  vars = %s
   schema = %s
 }
-`, endpoint, template, templateFmt, projectionId, rsxId, paramsStr, schemaStr)
+`, endpoint, template, templateFmt, projectionId, rsxId, varsStr, schemaStr)
 }

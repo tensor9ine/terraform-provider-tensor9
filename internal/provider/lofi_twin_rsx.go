@@ -38,7 +38,7 @@ type T9LoFiTwinRsxModel struct {
 	Template     types.String `tfsdk:"template"`
 	TemplateFmt  types.String `tfsdk:"template_fmt"`
 	ProjectionId types.String `tfsdk:"projection_id"`
-	Params       types.Map    `tfsdk:"params"`
+	Vars         types.Map    `tfsdk:"vars"`
 	Schema       types.Map    `tfsdk:"schema"`
 	Outputs      types.Map    `tfsdk:"outputs"`
 	RsxId        types.String `tfsdk:"rsx_id"`
@@ -55,7 +55,7 @@ type TfLoFiTwinRsx struct {
 	RsxId        *string                   `json:"rsxId"`
 	Template     *TfLoFiTemplate           `json:"template"`
 	ProjectionId *string                   `json:"projectionId"`
-	Params       *map[string]string        `json:"params"`
+	Vars         *map[string]string        `json:"vars"`
 	Schema       *map[string]TfRsxPropType `json:"schema"`
 	Outputs      *map[string]string        `json:"outputs"`
 	InfraId      *string                   `json:"infraId"`
@@ -118,10 +118,10 @@ func (r *T9LoFiTwinRsx) Schema(ctx context.Context, req resource.SchemaRequest, 
 				Optional:            false,
 				Required:            true,
 			},
-			"params": schema.MapAttribute{
+			"vars": schema.MapAttribute{
 				ElementType:         types.StringType,
 				Required:            true,
-				MarkdownDescription: "A map of parameters to pass to the template that specified the resource",
+				MarkdownDescription: "A map of variables to pass to the template that specified the resource",
 				PlanModifiers: []planmodifier.Map{
 					mapplanmodifier.UseStateForUnknown(),
 				},
@@ -205,7 +205,7 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 	tflog.Debug(ctx, fmt.Sprintf("Found provider endpoint: %s", r.provider.Endpoint))
 	tflog.Debug(ctx, fmt.Sprintf("Found provider api_key: %s", r.provider.ApiKey))
 
-	params := mapToStringMap(rsxModel.Params)
+	vars := mapToStringMap(rsxModel.Vars)
 	schema := schematize(rsxModel.Schema)
 	var evt = TfRsxEvt{
 		ApiKey:  r.provider.ApiKey.ValueString(),
@@ -218,7 +218,7 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 				Fmt: rsxModel.TemplateFmt.ValueString(),
 			},
 			ProjectionId: rsxModel.ProjectionId.ValueStringPointer(),
-			Params:       &params,
+			Vars:         &vars,
 			Schema:       &schema,
 		},
 	}
