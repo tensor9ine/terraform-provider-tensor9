@@ -41,6 +41,7 @@ type T9LoFiTwinRsxModel struct {
 	Vars         types.Map    `tfsdk:"vars"`
 	Schema       types.Map    `tfsdk:"schema"`
 	Outputs      types.Map    `tfsdk:"outputs"`
+	ReleaseId    types.String `tfsdk:"release_id"`
 	RsxId        types.String `tfsdk:"rsx_id"`
 	InfraId      types.String `tfsdk:"infra_id"`
 	Id           types.String `tfsdk:"id"`
@@ -52,6 +53,7 @@ type TfLoFiTemplate struct {
 }
 
 type TfLoFiTwinRsx struct {
+	ReleaseId    *string                   `json:"releaseId"`
 	RsxId        *string                   `json:"rsxId"`
 	Template     *TfLoFiTemplate           `json:"template"`
 	ProjectionId *string                   `json:"projectionId"`
@@ -212,7 +214,8 @@ func (r *T9LoFiTwinRsx) Create(ctx context.Context, req resource.CreateRequest, 
 		RsxType: "LoFiTwin",
 		EvtType: "Create",
 		LoFiTwinRsx: &TfLoFiTwinRsx{
-			RsxId: rsxModel.RsxId.ValueStringPointer(),
+			ReleaseId: rsxModel.ReleaseId.ValueStringPointer(),
+			RsxId:     rsxModel.RsxId.ValueStringPointer(),
 			Template: &TfLoFiTemplate{
 				Raw: rsxModel.Template.ValueString(),
 				Fmt: rsxModel.TemplateFmt.ValueString(),
